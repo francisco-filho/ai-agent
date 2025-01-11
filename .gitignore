@@ -1,2 +1,4 @@
 .venv
 .env
+aiagent.egg-info
+__pycache__

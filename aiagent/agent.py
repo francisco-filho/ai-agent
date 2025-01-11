@@ -125,7 +125,7 @@ Você será chamado novamente com isto:
 Observação: França é um país. Sua captial é Paris.
 
 Você então irá retornar:
-Resposta: A capital da França é Paris. 
+Resposta: Paris 
 """
 
 action_re = re.compile(r"^Ação: (\w+): (.*)")
@@ -137,7 +137,7 @@ def chat(question):
 
 acoes = {
     "calcular": calculator,
-    "wikipedia": calculator,
+    "wikipedia": wikipedia,
     "chat": chat,
 }
 
@@ -173,10 +173,10 @@ def query(question, max_turns=5):
         else:
             return result
 
-if __name__ == '__main__':
-    #chat = ChatbotOpenAI(system="você fala português nativo")
-    #resp = query("Quem é a empresa produtora da série 'Arcane' da Netflix")
-
+def main():
     question = input("Ask a question: ")
     resp = query(question)
+
+if __name__ == '__main__':
+    main()
 

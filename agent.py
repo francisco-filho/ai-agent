@@ -97,6 +97,9 @@ class ChatbotOpenAI(Chatbot):
         return completion.choices[0].message.content
 
 
+calculator = PythonCalculator()
+wikipedia = WikipediaTool()
+
 prompt=f"""
 Você funciona em um loop de Pensamento, Ação, PAUSA e Observaçao.
 No final do loop você exibe a resposta.
@@ -105,8 +108,8 @@ Use Ação para executar uma das ações disponíveis e então você PAUSA.
 Observação será o resultado de executar uma Ação
 
 Ações disponíveis:
-{str(PythonCalculator())}
-{str(WikipediaTool())}
+{str(calculator)}
+{str(wikipedia)}
 
 chat:
 Responde questão com informações já conhecidas pelo modelo.
@@ -131,9 +134,10 @@ def chat(question):
     chat = ChatbotOpenAI(system="Você responde as questões da maneira mais suscinta possível, sem explicações")
     return chat(question)
 
+
 acoes = {
-    "calcular": PythonCalculator(),
-    "wikipedia": WikipediaTool(),
+    "calcular": calculator,
+    "wikipedia": calculator,
     "chat": chat,
 }
 

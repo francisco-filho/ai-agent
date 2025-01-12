@@ -2,6 +2,9 @@ import re
 import httpx
 import logging
 from openai import OpenAI
+import ollama
+from ollama import chat
+from ollama import ChatResponse
 from pydantic import BaseModel
 from typing import Any
 
@@ -76,6 +79,25 @@ class Chatbot(BaseModel):
     system: str | None = None 
     messages: list[dict] = []
 
+    def __call__(self, message):
+        self.messages.append({"role": "user", "content": message})
+        result = self.execute()
+        self.messages.append({"role": "assistant", "content": result})
+        return result
+
+
+class ChatbotOllama(Chatbot):
+
+    def __init__(self, system=None):
+        super().__init__(system=system)
+        if system:
+            self.messages.append({"role": "system", "content": self.system})
+
+    def execute(self):
+        response = ollama.chat(model= "llama3", messages=self.messages)
+        completion = response['message']['content']
+        return completion
+
 
 class ChatbotOpenAI(Chatbot):
     openai: Any = None
@@ -86,12 +108,6 @@ class ChatbotOpenAI(Chatbot):
             self.messages.append({"role": "system", "content": self.system})
         self.openai = OpenAI()
 
-    def __call__(self, message):
-        self.messages.append({"role": "user", "content": message})
-        result = self.execute()
-        self.messages.append({"role": "assistant", "content": result})
-        return result
-
     def execute(self):
         completion = self.openai.chat.completions.create(model="gpt-4o-mini", messages=self.messages)
         return completion.choices[0].message.content
@@ -101,8 +117,9 @@ calculator = PythonCalculator()
 wikipedia = WikipediaTool()
 
 prompt=f"""
-Você funciona em um loop de Pensamento, Ação, PAUSA e Observaçao.
+Você fala português e funciona em um loop de Pensamento, Ação, PAUSA e Observaçao.
 No final do loop você exibe a resposta.
+Execute somente um passo de cada vês
 Use Pensamento para descrever o que você acha que devem ser as ações a serem tomadas.
 Use Ação para executar uma das ações disponíveis e então você PAUSA.
 Observação será o resultado de executar uma Ação
@@ -116,13 +133,13 @@ Responde questão com informações já conhecidas pelo modelo.
 ex: chat: Qual a capital do Brasil?
 
 Exemplo de uma sessão:
-Pergunta: Qual a capital da França?
-Pensamento: Eu devo pesquisar conteudo sobre a França na Wikipedia.
-Ação: wikipedia: França
+Pergunta: Qual a capital da França? <usuário>
+Pensamento: Eu devo pesquisar conteudo sobre a França na Wikipedia. <você>
+Ação: wikipedia: França <você define qual ação a ser tomada>
 PAUSA
 
 Você será chamado novamente com isto:
-Observação: França é um país. Sua captial é Paris.
+Observação: França é um país. Sua captial é Paris. <essa informação foi o resultado da ação>
 
 Você então irá retornar:
 Resposta: Paris 
@@ -131,7 +148,8 @@ Resposta: Paris
 action_re = re.compile(r"^Ação: (\w+): (.*)")
 
 def chat(question):
-    chat = ChatbotOpenAI(system="Você responde as questões da maneira mais suscinta possível, sem explicações")
+    #chat = ChatbotOpenAI(system="Você responde as questões da maneira mais suscinta possível, sem explicações")
+    chat = ChatbotOllama(system="Você responde as questões da maneira mais suscinta possível, sem explicações")
     return chat(question)
 
 
@@ -154,14 +172,20 @@ class Agente(BaseModel):
 
 def query(question, max_turns=5):
     i = 0
-    bot = ChatbotOpenAI(prompt)
+    #bot = ChatbotOpenAI(prompt)
+    bot = ChatbotOllama(prompt)
     next_prompt = question
     print(f"Respondendo a questão: {question}")
     while i < max_turns:
         i += 1
         result = bot(next_prompt)
+        
+        print(f"-------------------\n{result}\n-------------------\n")
+        if "Resposta:" in result:
+            return result
         logging.info(result)
         actions = [action_re.match(a) for a in result.split("\n") if action_re.match(a)]
+        logging.info(f"actions: {actions} --> {result}")
         if actions:
             action, input = actions[0].groups()
             if action not in acoes:

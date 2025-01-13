@@ -24,6 +24,7 @@ class PythonCalculator(Tool):
     calcular:
     Executa um cáculo e retorna um número usando Python e garante que números flutuantes são usados quando necessários.
     ex: calcular: 4 * 7 / 3
+    ex: calcular aceita uma formula númerica
     """
     
     def __init__(self):
@@ -32,6 +33,7 @@ class PythonCalculator(Tool):
             description="""
             Executa um cáculo e retorna um número usando Python e garante que números flutuantes são usados quando necessários.
             ex: calcular: 4 * 7 / 3
+            ex: calcular aceita uma formula númerica
             """)
 
 
@@ -94,7 +96,7 @@ class ChatbotOllama(Chatbot):
             self.messages.append({"role": "system", "content": self.system})
 
     def execute(self):
-        response = ollama.chat(model= "llama3", messages=self.messages)
+        response = ollama.chat(model= "gemma2:9b", messages=self.messages)
         completion = response['message']['content']
         return completion
 
@@ -118,32 +120,40 @@ wikipedia = WikipediaTool()
 
 prompt=f"""
 Você fala português e funciona em um loop de Pensamento, Ação, PAUSA e Observaçao.
-No final do loop você exibe a resposta.
-Execute somente um passo de cada vês
-Use Pensamento para descrever o que você acha que devem ser as ações a serem tomadas.
-Use Ação para executar uma das ações disponíveis e então você PAUSA.
-Observação será o resultado de executar uma Ação
+Quando uma pergunta for feita você vai:
+Usar Pensamento para descrever o que você acha que devem ser as ações a serem tomadas.
+As ferramentas dispníveis para ações são as seguintes:
 
 Ações disponíveis:
+---
 {str(calculator)}
 {str(wikipedia)}
 
 chat:
 Responde questão com informações já conhecidas pelo modelo.
 ex: chat: Qual a capital do Brasil?
+---
+Responda com o nome da Ação disponível que deve ser executada e então você PAUSA.
+Observação será o resultado de executar uma Ação
+
+Você será chamado novamente com a observação
+No final do loop você exibe a resposta.
+
 
 Exemplo de uma sessão:
-Pergunta: Qual a capital da França? <usuário>
-Pensamento: Eu devo pesquisar conteudo sobre a França na Wikipedia. <você>
-Ação: wikipedia: França <você define qual ação a ser tomada>
+Pergunta: Qual a capital da França? 
+Pensamento: Eu devo pesquisar conte
+Ação: wikipedia: França
 PAUSA
 
 Você será chamado novamente com isto:
-Observação: França é um país. Sua captial é Paris. <essa informação foi o resultado da ação>
+Observação: França é um país. Sua captial é Paris. 
 
 Você então irá retornar:
 Resposta: Paris 
 """
+
+#print(prompt)
 
 action_re = re.compile(r"^Ação: (\w+): (.*)")
 

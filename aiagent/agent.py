@@ -22,18 +22,21 @@ class Tool(BaseModel):
 class PythonCalculator(Tool):
     """
     calcular:
-    Executa um cáculo e retorna um número usando Python e garante que números flutuantes são usados quando necessários. O input para esta ação deve ser uma expressão python válida
+    Executa um cáculo e retorna um número usando Python e garante que números flutuantes são usados quando necessários. O input para esta ação deve ser uma expressão python válida.
+    Como usar a ação calcular: 
     ex: calcular: 4 * 7 / 3
-    ex: calcular aceita uma formula númerica
+    ex: calcular aceita um código python válido que representa formula númerica
     """
     
     def __init__(self):
         super().__init__(
             name="calcular", 
             description="""
-            Executa um cáculo e retorna um número usando Python e garante que números flutuantes são usados quando necessários.
+            calcular:
+            Executa um cáculo e retorna um número usando Python e garante que números flutuantes são usados quando necessários. O input para esta ação deve ser uma expressão python válida.
+            Como usar a ação calcular: 
             ex: calcular: 4 * 7 / 3
-            ex: calcular aceita uma formula númerica
+            ex: calcular aceita um código python válido que representa formula númerica
             """)
 
 
@@ -147,13 +150,12 @@ Responde questão com informações já conhecidas pelo modelo.
 ex: chat: Qual a capital do Brasil?
 ---
 Responda com o nome da Ação disponível que deve ser executada e então você PAUSA.
-Observação será o resultado de executar uma Ação
 
 Você será chamado novamente com a observação
 
 Exemplo de uma sessão:
 Pergunta: Qual a capital da França e da Alemanha? 
-Pensamento: Eu devo pesquisar conte
+Pensamento: Eu devo pesquisar sobre a frança e Alemanha para poder responder, para isso irei chamar uma ação passando os parametros requeridos pela ação
 Ação: wikipedia: França
 Ação: wikipedia: Alemanha
 
@@ -186,7 +188,7 @@ Resposta: Paris
 
 #print(prompt)
 
-action_re = re.compile(r"^Ação: (\w+): (.*)")
+action_re = re.compile(r"^Ação:\s*(\w+): (.*)")
 
 def chat(question):
     #chat = ChatbotOpenAI(system="Você responde as questões da maneira mais suscinta possível, sem explicações")
@@ -230,6 +232,7 @@ def query(question, max_turns=5):
 
         if "Resposta Final" in result:
             logging.info(result)
+            #logging.info(hst.messages)
             return
         
         logging.info(f"Pensamento: {result}{'|fim_pensamento|'}")
@@ -251,9 +254,11 @@ def query(question, max_turns=5):
             next_prompt = bot.execute(hst) 
             if "Resposta Final" in next_prompt:
                 logging.info(next_prompt)
+                #logging.info(hst.messages)
                 return
-            logging.warn(f"Next prompt: {next_prompt}")
+            #logging.warn(f"Next prompt: {next_prompt}")
         else:
+            logging.info("No Actions found")
             return result
 
 def main():
